@@ -67,7 +67,7 @@ export default function Dashboard() {
             {[
               { label: 'SYSTEM', value: 'NOMINAL', color: '#00ff88' },
               { label: 'DRONES', value: '3/4 ACTIVE', color: '#00d4ff' },
-              { label: 'VICTIMS', value: personDetected ? '1 LOCATED' : 'SCANNING', color: personDetected ? '#ff4444' : '#ffcc00' },
+              { label: 'VICTIMS', value: personDetected ? `${personDetected === true ? 1 : personDetected} LOCATED` : 'SCANNING', color: personDetected ? '#ff4444' : '#ffcc00' },
               { label: 'SEVERITY', value: 'HIGH', color: '#ff4444' },
             ].map((s) => (
               <div
@@ -112,13 +112,13 @@ export default function Dashboard() {
         <div
           className="grid gap-3"
           style={{
-            gridTemplateColumns: '3fr 2fr',
-            height: '52vh',
+            gridTemplateColumns: '2fr 1fr',
+            height: '68vh',
             minHeight: '320px',
           }}
         >
           {/* LEFT: Drone Video Panel */}
-          <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0 min-h-0">
             <div className="text-xs font-mono text-drone-text/40 mb-1 px-1 flex items-center justify-between">
               <span className="uppercase tracking-widest">Drone Video Feed</span>
               {personDetected && (
@@ -126,18 +126,18 @@ export default function Dashboard() {
               )}
             </div>
             <div className="flex-1 min-h-0">
-              <DroneVideo onPersonDetected={handlePersonDetected} />
+              <DroneVideo onAnalysisComplete={(count) => setPersonDetected(count > 0 ? count : false)} />
             </div>
           </div>
 
           {/* RIGHT: Map Panel */}
-          <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0 min-h-0">
             <div className="text-xs font-mono text-drone-text/40 mb-1 px-1 flex items-center justify-between">
               <span className="uppercase tracking-widest">Tactical Map</span>
               <span className="text-drone-text/30 text-xs">Route: {selectedDrone.toUpperCase()} → VICTIM</span>
             </div>
             <div className="flex-1 min-h-0">
-              <MapView selectedDrone={selectedDrone} personDetected={personDetected} />
+              <MapView selectedDrone={selectedDrone} personCount={typeof personDetected === 'number' ? personDetected : (personDetected ? 1 : 0)} />
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function Dashboard() {
         {/* BOTTOM ROW: 3 equal panels */}
         <div
           className="grid grid-cols-3 gap-3"
-          style={{ height: 'calc(48vh - 3rem - 56px)', minHeight: '220px' }}
+          style={{ height: 'calc(32vh - 3rem - 56px)', minHeight: '220px' }}
         >
           <div className="flex flex-col min-w-0">
             <div className="text-xs font-mono text-drone-text/40 mb-1 px-1 uppercase tracking-widest">Water Severity</div>

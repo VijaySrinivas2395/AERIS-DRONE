@@ -13,8 +13,8 @@ model = YOLO("yolov8n.pt")
 
 # COCO class index for "person" is 0
 PERSON_CLASS_ID = 0
-CONFIDENCE_THRESHOLD = 0.75
-FRAME_SAMPLE_RATE = 5  # process every 5th frame for speed
+CONFIDENCE_THRESHOLD = 0.35
+FRAME_SAMPLE_RATE = 3  # process every 3rd frame for speed
 
 
 @app.route("/", methods=["GET"])
@@ -62,7 +62,7 @@ def detect_video():
             # Process every Nth frame
             if frame_idx % FRAME_SAMPLE_RATE == 0:
                 frames_processed += 1
-                results = model(frame, verbose=False)
+                results = model(frame, classes=[PERSON_CLASS_ID], verbose=False)
 
                 for result in results:
                     for box in result.boxes:
@@ -93,13 +93,14 @@ def detect_video():
         except Exception:
             pass
 
-    person_count = len(detections)
-    max_conf = round(max((d["confidence"] for d in detections), default=0.0), 4)
-
     # Build frame-indexed lookup for frontend (frame -> list of detections)
     frame_map = {}
     for d in detections:
         frame_map.setdefault(str(d["frame"]), []).append(d)
+
+    # Calculate actual person count (max in any single frame)
+    person_count = max((len(dets) for dets in frame_map.values()), default=0)
+    max_conf = round(max((d["confidence"] for d in detections), default=0.0), 4)
 
     return jsonify({
         "total_frames": total_frames,

@@ -48,9 +48,50 @@ function nearestRescueDrone(selectedDrone) {
   return LOCATIONS[key] || LOCATIONS.rescue1;
 }
 
-export default function MapView({ selectedDrone = 'rescue1', personDetected = false }) {
+export default function MapView({ selectedDrone = 'rescue1', personCount = 0 }) {
   const routeStart = nearestRescueDrone(selectedDrone);
   const routeEnd   = LOCATIONS.victim;
+  const isPersonDetected = personCount > 0;
+
+  // Generate slightly offset victim coordinates based on count
+  const renderVictimMarkers = () => {
+    if (personCount === 0) return null;
+    
+    // For 1 person, just use the exact coordinate
+    if (personCount === 1) {
+      return (
+        <Marker position={LOCATIONS.victim} icon={victimIcon}>
+          <Popup>
+            <div className="font-mono text-xs p-1">
+              <div className="font-bold" style={{ color: '#ff4444' }}>⚠ VICTIM LOCATED</div>
+              <div>● Confirmed via YOLOv8</div>
+              <div>Coords: 13.0835°N, 80.2685°E</div>
+            </div>
+          </Popup>
+        </Marker>
+      );
+    }
+
+    // For >1 person, generate a tight cluster
+    return Array.from({ length: personCount }).map((_, i) => {
+      // Small random offset around center (roughly 5-10 meters)
+      const latOffset = (Math.random() - 0.5) * 0.00015;
+      const lngOffset = (Math.random() - 0.5) * 0.00015;
+      const pos = [LOCATIONS.victim[0] + latOffset, LOCATIONS.victim[1] + lngOffset];
+      
+      return (
+        <Marker key={`victim-${i}`} position={pos} icon={victimIcon}>
+          <Popup>
+            <div className="font-mono text-xs p-1">
+              <div className="font-bold" style={{ color: '#ff4444' }}>⚠ VICTIM {i+1} LOCATED</div>
+              <div>● Confirmed via YOLOv8</div>
+              <div>Coords: {pos[0].toFixed(5)}°N, {pos[1].toFixed(5)}°E</div>
+            </div>
+          </Popup>
+        </Marker>
+      );
+    });
+  };
 
   return (
     <div className="relative w-full h-full rounded-lg overflow-hidden border border-drone-border">
@@ -65,8 +106,8 @@ export default function MapView({ selectedDrone = 'rescue1', personDetected = fa
           LAT: 13.083° N · LON: 80.270° E
         </div>
         <div className="flex items-center gap-2 text-xs font-mono">
-          {personDetected && (
-            <span className="text-drone-red animate-pulse">⚠ VICTIM LOCKED</span>
+          {isPersonDetected && (
+            <span className="text-drone-red animate-pulse">⚠ {personCount} VICTIM{personCount > 1 ? 'S' : ''} LOCKED</span>
           )}
           <span className="text-drone-green">LIVE ●</span>
         </div>
@@ -125,22 +166,14 @@ export default function MapView({ selectedDrone = 'rescue1', personDetected = fa
           </Popup>
         </Marker>
 
-        {/* Victim */}
-        <Marker position={LOCATIONS.victim} icon={victimIcon}>
-          <Popup>
-            <div className="font-mono text-xs p-1">
-              <div className="font-bold" style={{ color: '#ff4444' }}>⚠ VICTIM LOCATED</div>
-              <div>{personDetected ? '● Confirmed via YOLOv8' : '● GPS Tracked'}</div>
-              <div>Coords: 13.0835°N, 80.2685°E</div>
-            </div>
-          </Popup>
-        </Marker>
+        {/* Victim Markers */}
+        {renderVictimMarkers()}
 
         {/* Route polyline: selected rescue drone → victim */}
         <Polyline
           positions={[routeStart, routeEnd]}
           pathOptions={{
-            color: personDetected ? '#ff4444' : '#00ff88',
+            color: isPersonDetected ? '#ff4444' : '#00ff88',
             weight: 2,
             opacity: 0.85,
             dashArray: '7 5',
@@ -156,16 +189,16 @@ export default function MapView({ selectedDrone = 'rescue1', personDetected = fa
         <div className="flex items-center gap-2"><span style={{ color: '#00d4ff' }}>●</span> Surveillance</div>
         <div className="flex items-center gap-2"><span style={{ color: '#00ff88' }}>●</span> Rescue Drones</div>
         <div className="flex items-center gap-2"><span style={{ color: '#ff4444' }}>●</span> Victim</div>
-        <div className="flex items-center gap-2"><span style={{ color: personDetected ? '#ff4444' : '#00ff88' }}>──</span> Route</div>
+        <div className="flex items-center gap-2"><span style={{ color: isPersonDetected ? '#ff4444' : '#00ff88' }}>──</span> Route</div>
       </div>
 
       {/* Person detected banner */}
-      {personDetected && (
+      {isPersonDetected && (
         <div
           className="absolute top-12 left-1/2 -translate-x-1/2 z-[999] flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono font-bold animate-pulse"
           style={{ background: 'rgba(255,68,68,0.2)', border: '1px solid #ff444488', color: '#ff4444' }}
         >
-          ⚠ VICTIM DETECTED · ROUTE UPDATED
+          ⚠ {personCount} VICTIM{personCount > 1 ? 'S' : ''} DETECTED · ROUTE UPDATED
         </div>
       )}
     </div>

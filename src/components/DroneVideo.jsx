@@ -68,7 +68,7 @@ function drawDetections(canvas, video, frameDetections) {
   });
 }
 
-export default function DroneVideo({ onPersonDetected }) {
+export default function DroneVideo({ onAnalysisComplete }) {
   const [videoSrc, setVideoSrc]   = useState(null);
   const [videoName, setVideoName] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -123,7 +123,7 @@ export default function DroneVideo({ onPersonDetected }) {
     setUploading(true);
     setApiError(null);
     setResult(null);
-    if (onPersonDetected) onPersonDetected(false);
+    if (onAnalysisComplete) onAnalysisComplete(0);
 
     try {
       const formData = new FormData();
@@ -138,7 +138,7 @@ export default function DroneVideo({ onPersonDetected }) {
 
       const data = await response.json();
       setResult(data);
-      if (data.person_detected && onPersonDetected) onPersonDetected(true);
+      if (onAnalysisComplete) onAnalysisComplete(data.person_count);
     } catch (err) {
       setApiError(err.message || 'Backend connection failed');
     } finally {
