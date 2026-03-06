@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --drone-bg: #0a0e1a;
+  --drone-panel: #0f1629;
+  --panel-border: #1e3a5f;
+  --accent: #00d4ff;
+  --green: #00ff88;
+  --yellow: #ffcc00;
+  --red: #ff4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--drone-bg);
+  color: #c8d8f0;
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #0a0e1a; }
+::-webkit-scrollbar-thumb { background: #1e3a5f; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #00d4ff; }
+
+/* Leaflet map reset */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #0a0e1a !important;
+  border-radius: 0.5rem;
+}
+
+/* CRT scanline effect */
+.crt-overlay {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.05) 2px,
+    rgba(0, 0, 0, 0.05) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 0.5rem;
+}
+
+/* Glowing panel border */
+.panel-glow {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.05), inset 0 0 20px rgba(0, 212, 255, 0.02);
+}
+
+/* Status indicator pulse */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(0, 255, 136, 0); }
+}
+.status-pulse-green { animation: statusPulse 2s infinite; }
+
+@keyframes statusPulseRed {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 68, 68, 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(255, 68, 68, 0); }
+}
+.status-pulse-red { animation: statusPulseRed 1.5s infinite; }
+
+/* Video scan animation */
+@keyframes scanDown {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+.scan-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.6), transparent);
+  animation: scanDown 3s linear infinite;
+  z-index: 5;
+}
+
+/* Alert slide-in */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.alert-item { animation: slideIn 0.3s ease-out; }
+
+/* Severity bar fill */
+@keyframes barFill {
+  from { width: 0%; }
+}
+.severity-bar { animation: barFill 1s ease-out; }
+
+/* Radar sweep */
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.radar-sweep { animation: radarSweep 4s linear infinite; }
+
+/* Header glow pulse */
+@keyframes headerGlow {
+  0%, 100% { text-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
+  50% { text-shadow: 0 0 40px rgba(0, 212, 255, 0.9), 0 0 60px rgba(0, 212, 255, 0.3); }
+}
+.header-glow { animation: headerGlow 3s ease-in-out infinite; }
