@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -52,6 +52,41 @@ export default function MapView({ selectedDrone = 'rescue1', personCount = 0 }) 
   const routeStart = nearestRescueDrone(selectedDrone);
   const routeEnd   = LOCATIONS.victim;
   const isPersonDetected = personCount > 0;
+
+  const [routePath, setRoutePath] = useState(null);
+  const [routeETA, setRouteETA] = useState(null);
+  const [isSatellite, setIsSatellite] = useState(false);
+
+  // Fetch actual road route from OSRM
+  useEffect(() => {
+    async function fetchRoute() {
+      try {
+        // OSRM expects: longitude,latitude;longitude,latitude
+        const url = `https://router.project-osrm.org/route/v1/driving/${routeStart[1]},${routeStart[0]};${routeEnd[1]},${routeEnd[0]}?overview=full&geometries=geojson`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data && data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          
+          // OSRM returns GeoJSON coordinates in [lng, lat] format.
+          // Leaflet Polyline expects [lat, lng] format.
+          const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+          setRoutePath(coordinates);
+
+          // Calculate ETA
+          const durationSeconds = route.duration;
+          const mins = Math.floor(durationSeconds / 60);
+          const secs = Math.floor(durationSeconds % 60);
+          setRouteETA(`${mins}m ${secs}s`);
+        }
+      } catch (err) {
+        console.error("Failed to fetch OSRM route:", err);
+      }
+    }
+
+    fetchRoute();
+  }, [routeStart, routeEnd]);
 
   // Generate slightly offset victim coordinates based on count
   const renderVictimMarkers = () => {
@@ -113,16 +148,32 @@ export default function MapView({ selectedDrone = 'rescue1', personCount = 0 }) 
         </div>
       </div>
 
+      {/* Satellite Toggle Button */}
+      <button 
+        className="absolute top-12 left-3 z-[1000] bg-drone-panel/85 backdrop-blur border border-drone-border rounded px-3 py-1.5 text-xs font-mono text-drone-accent hover:bg-drone-accent/10 transition-colors"
+        onClick={() => setIsSatellite(!isSatellite)}
+        style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+      >
+        {isSatellite ? '📡 SATELLITE ON' : '🗺️ SATELLITE OFF'}
+      </button>
+
       <MapContainer
         center={MAP_CENTER}
         zoom={15}
         zoomControl={false}
         style={{ height: '100%', width: '100%' }}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://openstreetmap.org">OSM</a>'
-        />
+        {isSatellite ? (
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+          />
+        ) : (
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://openstreetmap.org">OSM</a>'
+          />
+        )}
         <ZoomControl position="bottomright" />
 
         {/* Surveillance drone */}
@@ -169,16 +220,34 @@ export default function MapView({ selectedDrone = 'rescue1', personCount = 0 }) 
         {/* Victim Markers */}
         {renderVictimMarkers()}
 
-        {/* Route polyline: selected rescue drone → victim */}
-        <Polyline
-          positions={[routeStart, routeEnd]}
-          pathOptions={{
-            color: isPersonDetected ? '#ff4444' : '#00ff88',
-            weight: 2,
-            opacity: 0.85,
-            dashArray: '7 5',
-          }}
-        />
+        {/* OSRM Route polyline */}
+        {routePath ? (
+          <Polyline
+            positions={routePath}
+            pathOptions={{
+              color: isPersonDetected ? '#ff4444' : '#00ff88',
+              weight: 5,
+              opacity: 0.9,
+            }}
+          >
+            {routeETA && (
+              <Popup autoPan={false}>
+                <div className="font-mono text-xs font-bold whitespace-nowrap">ETA: {routeETA}</div>
+              </Popup>
+            )}
+          </Polyline>
+        ) : (
+          /* Fallback straight line while loading */
+          <Polyline
+            positions={[routeStart, routeEnd]}
+            pathOptions={{
+              color: isPersonDetected ? '#ff4444' : '#00ff88',
+              weight: 3,
+              opacity: 0.5,
+              dashArray: '7 5',
+            }}
+          />
+        )}
       </MapContainer>
 
       {/* CRT overlay */}
@@ -189,7 +258,10 @@ export default function MapView({ selectedDrone = 'rescue1', personCount = 0 }) 
         <div className="flex items-center gap-2"><span style={{ color: '#00d4ff' }}>●</span> Surveillance</div>
         <div className="flex items-center gap-2"><span style={{ color: '#00ff88' }}>●</span> Rescue Drones</div>
         <div className="flex items-center gap-2"><span style={{ color: '#ff4444' }}>●</span> Victim</div>
-        <div className="flex items-center gap-2"><span style={{ color: isPersonDetected ? '#ff4444' : '#00ff88' }}>──</span> Route</div>
+        <div className="flex items-center gap-2">
+          <span style={{ color: isPersonDetected ? '#ff4444' : '#00ff88', fontWeight: 'bold' }}>──</span> 
+          Route {routeETA ? `(${routeETA})` : ''}
+        </div>
       </div>
 
       {/* Person detected banner */}
