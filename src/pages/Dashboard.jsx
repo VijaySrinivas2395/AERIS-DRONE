@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MapView from '../components/MapView';
 import DroneVideo from '../components/DroneVideo';
-import WaterSeverity from '../components/WaterSeverity';
+import ResnetScanner from '../components/ResnetScanner';
 import DroneStatus from '../components/DroneStatus';
 import AlertsPanel from '../components/AlertsPanel';
 import { FiSettings, FiBell } from 'react-icons/fi';
@@ -148,9 +148,9 @@ export default function Dashboard() {
           style={{ height: 'calc(32vh - 3rem - 56px)', minHeight: '220px' }}
         >
           <div className="flex flex-col min-w-0">
-            <div className="text-xs font-mono text-drone-text/40 mb-1 px-1 uppercase tracking-widest">Water Severity</div>
+            <div className="text-xs font-mono text-drone-text/40 mb-1 px-1 uppercase tracking-widest">ResNet Flood Severity scanner</div>
             <div className="flex-1 min-h-0">
-              <WaterSeverity />
+              <ResnetScanner />
             </div>
           </div>
           <div className="flex flex-col min-w-0">

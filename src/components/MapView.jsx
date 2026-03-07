@@ -56,13 +56,41 @@ export default function MapView({ selectedDrone = 'rescue1', personCount = 0 }) 
   const [routePath, setRoutePath] = useState(null);
   const [routeETA, setRouteETA] = useState(null);
   const [isSatellite, setIsSatellite] = useState(false);
+  const [victimLocations, setVictimLocations] = useState([]);
 
-  // Fetch actual road route from OSRM
+  // Generate deterministic victim coordinates on count change
+  useEffect(() => {
+    if (personCount === 0) {
+      setVictimLocations([]);
+    } else if (personCount === 1) {
+      setVictimLocations([LOCATIONS.victim]);
+    } else {
+      // Spread victims out slightly across a wider area to show meaningful road routing (~400m scatter)
+      const newLocs = Array.from({ length: personCount }).map((_, i) => {
+        // pseudo-deterministic based on index so it doesn't flicker
+        const latOffset = (Math.sin(i * 1234.5) * 0.003);
+        const lngOffset = (Math.cos(i * 6789.0) * 0.003);
+        return [LOCATIONS.victim[0] + latOffset, LOCATIONS.victim[1] + lngOffset];
+      });
+      setVictimLocations(newLocs);
+    }
+  }, [personCount]);
+
+  // Fetch actual multi-stop road route from OSRM
   useEffect(() => {
     async function fetchRoute() {
+      if (victimLocations.length === 0) {
+        setRoutePath(null);
+        setRouteETA(null);
+        return;
+      }
+
       try {
-        // OSRM expects: longitude,latitude;longitude,latitude
-        const url = `https://router.project-osrm.org/route/v1/driving/${routeStart[1]},${routeStart[0]};${routeEnd[1]},${routeEnd[0]}?overview=full&geometries=geojson`;
+        const startString = `${routeStart[1]},${routeStart[0]}`;
+        const waypoints = victimLocations.map(pos => `${pos[1]},${pos[0]}`).join(';');
+        
+        // OSRM expects: longitude,latitude;longitude,latitude...
+        const url = `https://router.project-osrm.org/route/v1/driving/${startString};${waypoints}?overview=full&geometries=geojson`;
         const response = await fetch(url);
         const data = await response.json();
         
@@ -86,46 +114,21 @@ export default function MapView({ selectedDrone = 'rescue1', personCount = 0 }) 
     }
 
     fetchRoute();
-  }, [routeStart, routeEnd]);
+  }, [routeStart, victimLocations]);
 
-  // Generate slightly offset victim coordinates based on count
+  // Render stable victim markers
   const renderVictimMarkers = () => {
-    if (personCount === 0) return null;
-    
-    // For 1 person, just use the exact coordinate
-    if (personCount === 1) {
-      return (
-        <Marker position={LOCATIONS.victim} icon={victimIcon}>
-          <Popup>
-            <div className="font-mono text-xs p-1">
-              <div className="font-bold" style={{ color: '#ff4444' }}>⚠ VICTIM LOCATED</div>
-              <div>● Confirmed via YOLOv8</div>
-              <div>Coords: 13.0835°N, 80.2685°E</div>
-            </div>
-          </Popup>
-        </Marker>
-      );
-    }
-
-    // For >1 person, generate a tight cluster
-    return Array.from({ length: personCount }).map((_, i) => {
-      // Small random offset around center (roughly 5-10 meters)
-      const latOffset = (Math.random() - 0.5) * 0.00015;
-      const lngOffset = (Math.random() - 0.5) * 0.00015;
-      const pos = [LOCATIONS.victim[0] + latOffset, LOCATIONS.victim[1] + lngOffset];
-      
-      return (
-        <Marker key={`victim-${i}`} position={pos} icon={victimIcon}>
-          <Popup>
-            <div className="font-mono text-xs p-1">
-              <div className="font-bold" style={{ color: '#ff4444' }}>⚠ VICTIM {i+1} LOCATED</div>
-              <div>● Confirmed via YOLOv8</div>
-              <div>Coords: {pos[0].toFixed(5)}°N, {pos[1].toFixed(5)}°E</div>
-            </div>
-          </Popup>
-        </Marker>
-      );
-    });
+    return victimLocations.map((pos, i) => (
+      <Marker key={`victim-${i}`} position={pos} icon={victimIcon}>
+        <Popup>
+          <div className="font-mono text-xs p-1">
+            <div className="font-bold" style={{ color: '#ff4444' }}>⚠ {personCount > 1 ? `VICTIM ${i+1}` : 'VICTIM'} LOCATED</div>
+            <div>● Confirmed via YOLOv8</div>
+            <div>Coords: {pos[0].toFixed(5)}°N, {pos[1].toFixed(5)}°E</div>
+          </div>
+        </Popup>
+      </Marker>
+    ));
   };
 
   return (
