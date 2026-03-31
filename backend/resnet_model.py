@@ -48,3 +48,11 @@ class ResNetUNet(nn.Module):
         x = self.final(x)
 
         return x
+
+if __name__ == "__main__":
+    print("Initializing ResNetUNet model...")
+    model = ResNetUNet()
+    print("Model initialized successfully!")
+    dummy_input = torch.randn(1, 3, 256, 256)
+    output = model(dummy_input)
+    print(f"Output shape: {output.shape}")

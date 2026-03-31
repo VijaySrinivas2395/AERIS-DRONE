@@ -56,9 +56,9 @@ export default function Dashboard() {
             </div>
             <div>
               <div className="header-glow text-base font-bold text-drone-accent font-mono tracking-wider leading-tight">
-                AI DRONE FLOOD RESCUE
+                AERIS
               </div>
-              <div className="text-xs text-drone-text/50 font-mono tracking-widest">CONTROL CENTER</div>
+              <div className="text-xs text-drone-text/50 font-mono tracking-widest">AUTONOMOUS EMERGENCY RESCUE AND INTELLIGENCE SYSTEM</div>
             </div>
           </div>
 
@@ -171,7 +171,7 @@ export default function Dashboard() {
       {/* ─── FOOTER ─── */}
       <footer className="shrink-0 border-t border-drone-border px-4 py-1.5 flex items-center justify-between bg-drone-panel/60">
         <div className="text-xs font-mono text-drone-text/30">
-          AI DRONE FLOOD RESCUE CONTROL CENTER · v2.5.0
+          AERIS · v2.5.0
         </div>
         <div className="flex items-center gap-4 text-xs font-mono text-drone-text/30">
           <span>LATENCY: 12ms</span>
